@@ -3,8 +3,8 @@
 interface Env {
   /** 运行环境 */
   ENVIRONMENT: 'production' | 'development'
-  /** EPG 列表地址 */
-  EPG_URLS: string[]
-  /** M3U 列表地址 */
+  /** 上游 M3U 地址 */
   M3U_URLS: string[]
+  /** 上游 EPG 地址 */
+  EPG_URL: string
 }
