@@ -123,27 +123,27 @@ export class Epg {
         continue
       }
 
-      if (node.rawTagName === 'programme') {
-        // 最后一个肯定是当前频道
-        const currentChannel = channels[channels.length - 1]
-        const { name, programmes } = currentChannel || {}
+      // if (node.rawTagName === 'programme') {
+      //   // 最后一个肯定是当前频道
+      //   const currentChannel = channels[channels.length - 1]
+      //   const { name, programmes } = currentChannel || {}
 
-        const { attributes, childNodes } = node
-        const { channel, start, stop } = attributes
-        if (name !== channel) {
-          continue
-        }
+      //   const { attributes, childNodes } = node
+      //   const { channel, start, stop } = attributes
+      //   if (name !== channel) {
+      //     continue
+      //   }
 
-        const titleEl = childNodes.find((node) => node.rawTagName === 'title')
-        if (!titleEl) {
-          continue
-        }
+      //   const titleEl = childNodes.find((node) => node.rawTagName === 'title')
+      //   if (!titleEl) {
+      //     continue
+      //   }
 
-        const { attributes: titleAttrs, innerText: title } = titleEl
-        const { lang } = titleAttrs
-        programmes.push({ title, lang, start, stop })
-        continue
-      }
+      //   const { attributes: titleAttrs, innerText: title } = titleEl
+      //   const { lang } = titleAttrs
+      //   programmes.push({ title, lang, start, stop })
+      //   continue
+      // }
     }
 
     info(`load ${channels.length} channels`)
