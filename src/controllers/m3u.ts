@@ -6,8 +6,6 @@ import { info, warn } from '@/services/logger'
 
 export default controller(async (ctx) => {
   const { req } = ctx
-  const url = new URL(req.url)
-  const baseUrl = url.protocol + '//' + url.hostname
 
   const urls = getM3UUrls(ctx)
   if (!urls.length) {
@@ -16,6 +14,9 @@ export default controller(async (ctx) => {
   }
 
   info(`m3u urls ${JSON.stringify(urls, null, 2)}`)
+
+  const url = new URL(req.url)
+  const baseUrl = url.protocol + '//' + url.hostname
 
   const playlist = new Playlist({
     urlTvg: `${baseUrl}/epg.xml`,
@@ -31,7 +32,7 @@ export default controller(async (ctx) => {
 
 function getM3UUrls({ env }: IContext) {
   if (typeof env.M3U_URLS === 'string') {
-    return JSON.stringify(env.M3U_URLS)
+    return JSON.parse(env.M3U_URLS)
   }
 
   if (Array.isArray(env.M3U_URLS)) {
