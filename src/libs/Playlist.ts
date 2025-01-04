@@ -1,8 +1,8 @@
 import { parseM3U, writeM3U, type M3uChannel, type M3uHeaders, type M3uPlaylist } from '@iptv/playlist'
 import { info } from '@/services/logger'
 import { USER_AGENT } from '@/constants/playlist'
-import type { PlaylistMapping } from '@/type'
 import { mappingM3UToEPG } from '@/utils/m3u'
+import type { PlaylistMapping } from '@/type'
 
 export interface PlaylistOptions {
   xTvgUrl?: string
@@ -40,10 +40,12 @@ export class Playlist {
     info(`loaded playlist from "${url}"`)
 
     const { channels } = parseM3U(content)
+    info(`found ${channels.length} channels`)
+
     const nextChannels = this.playlistMapping ? mappingM3UToEPG(this.playlistMapping, channels) : channels
     this.concat(...nextChannels)
 
-    info(`loaded ${this.channels.length} channels from "${url}"`)
+    info(`loaded ${nextChannels.length} channels from "${url}"`)
   }
 
   public toJSON(): M3uPlaylist {
