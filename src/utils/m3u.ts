@@ -3,18 +3,28 @@ import type { ChannelMapping, PlaylistMapping } from '@/type'
 
 /** 模糊匹配 channel 名称 */
 export function fuzzyMatch(pattern: string, name: string) {
-  if (pattern === name) {
+  const p = pattern.toLowerCase()
+  const n = name.toLowerCase()
+
+  if (pattern === name || p === n) {
     return 1
   }
 
-  if (name.includes(pattern)) {
+  if (!(name.length > 0 && pattern.length > 0)) {
+    return 0
+  }
+
+  if (name.includes(pattern) || p.includes(n)) {
     return 2
   }
 
-  const normalize = (text: string) => text.toLowerCase().replace(/[\s_-]+/g, '')
+  const normalize = (text: string) => {
+    const content = text.toLowerCase().replace(/[\s_-]+/g, '(?:\s*?)')
+    return new RegExp(`^${content}`, 'im')
+  }
+
   const normalizedPattern = normalize(pattern)
-  const regex = new RegExp(normalizedPattern.split('').join('[\\s_-]*'), 'i')
-  if (regex.test(name.replace(/[\s_-]/g, ''))) {
+  if (normalizedPattern.test(name)) {
     return 3
   }
 

@@ -10,7 +10,7 @@
     "lint": "eslint --fix .",
     "test": "jest -c ./jest.config.ts --coverage --reporters=default --reporters=jest-junit --passWithNoTests",
     "test:watch": "jest --watch",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --keep-vars",
     "dev": "wrangler dev --env=dev",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
