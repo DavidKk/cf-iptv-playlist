@@ -1,8 +1,8 @@
 import { USER_AGENT } from '@/constants/playlist'
 import type { PlaylistMapping } from '@/type'
-import { fuzzyMatch } from '@/utils/m3u'
+// import { fuzzyMatch } from '@/utils/m3u'
 import type { Node } from 'node-html-parser'
-import { parse } from 'node-html-parser'
+// import { parse } from 'node-html-parser'
 
 export interface ChannelDisplayNode extends Node {
   rawTagName: 'display-name'
@@ -91,7 +91,7 @@ export class Epg {
 
     const content = await response.text()
     const channels: EPGChannel[] = []
-    const root = parse(content)
+    // const root = parse(content)
     // const [, tv] = root.childNodes as [any, TVNode]
 
     // const playlist = this.playlistMapping?.flatMap((item) => {
@@ -140,22 +140,23 @@ export class Epg {
   }
 
   public toEPG() {
-    const root = parse(`<?xml version="1.0" encoding="UTF-8"?>`)
-    const nodes = Array.from(
-      (function* (channels) {
-        for (const { id, name, lang, programmes } of channels) {
-          yield `<channel id="${id}"><display-name lang="${lang}">${name}</display-name></channel>`
+    return ''
+    // const root = parse(`<?xml version="1.0" encoding="UTF-8"?>`)
+    // const nodes = Array.from(
+    //   (function* (channels) {
+    //     for (const { id, name, lang, programmes } of channels) {
+    //       yield `<channel id="${id}"><display-name lang="${lang}">${name}</display-name></channel>`
 
-          for (const { title, lang, start, stop } of programmes) {
-            yield `<programme channel="${id}" start="${start}" stop="${stop}"><title lang="${lang}">${title}</title></programme>`
-          }
-        }
-      })(this.channels)
-    )
+    //       for (const { title, lang, start, stop } of programmes) {
+    //         yield `<programme channel="${id}" start="${start}" stop="${stop}"><title lang="${lang}">${title}</title></programme>`
+    //       }
+    //     }
+    //   })(this.channels)
+    // )
 
-    const { name, url } = this.info
-    root.append(`<tv info-name="${name}" info-url="${url}">${nodes.join('')}</tv>`)
-    return root.outerHTML
+    // const { name, url } = this.info
+    // root.append(`<tv info-name="${name}" info-url="${url}">${nodes.join('')}</tv>`)
+    // return root.outerHTML
   }
 
   protected concat(...channels: EPGChannel[]) {
