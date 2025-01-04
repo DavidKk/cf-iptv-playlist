@@ -1,6 +1,6 @@
 # 执行环境
-ENVIRONMENT = "development"
+ENVIRONMENT="development"
 # 上游 epg 地址，正式环境在 dashboard 上添加
-EPG_URLS = ["http://127.0.0.1:8787/epg.mock.xml"]
+EPG_URLS=["http://127.0.0.1:8787/epg.mock.xml"]
 # 上游 m3u 地址，正式环境在 dashboard 上添加
-M3U_URLS = ["http://127.0.0.1:8787/iptv.mock.m3u"]
+M3U_URLS=["http://127.0.0.1:8787/iptv.mock.m3u"]
