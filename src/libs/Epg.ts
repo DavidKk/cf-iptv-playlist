@@ -1,4 +1,5 @@
 import { USER_AGENT } from '@/constants/playlist'
+import { info } from '@/services/logger'
 import type { PlaylistMapping } from '@/type'
 // import { fuzzyMatch } from '@/utils/m3u'
 import type { Node } from 'node-html-parser'
@@ -67,10 +68,10 @@ export interface EpgInfo {
 export class Epg {
   protected info: EpgInfo
   protected channels: EPGChannel[]
-  protected playlistMapping?: PlaylistMapping
+  protected playlistMapping: PlaylistMapping
 
   constructor(options?: EpgOptions) {
-    const { infoName = 'unknown', infoUrl = 'unknown', playlistMapping } = options || {}
+    const { infoName = 'unknown', infoUrl = 'unknown', playlistMapping = [] } = options || {}
 
     this.info = { name: infoName, url: infoUrl }
     this.channels = []
@@ -95,57 +96,57 @@ export class Epg {
 
     const content = await response.text()
     const channels: EPGChannel[] = []
-    try {
-      const root = parse(content)
-      console.log(typeof root)
-    } catch(error) {
-      console.log('wtf?')
+    const root = parse(content)
+    const [, tv] = (root?.childNodes || []) as [any, TVNode]
+
+    const playlist = this.playlistMapping.flatMap((item) => {
+      return item.channels.map((channel) => channel.name)
+    })
+
+    for (const node of tv.childNodes) {
+      if (node.rawTagName === 'channel') {
+        const { id, childNodes } = node
+        if (!playlist?.some((name) => id == name)) {
+          continue
+        }
+
+        const titleEl = childNodes.find((node) => node.rawTagName === 'display-name')
+        if (!titleEl) {
+          continue
+        }
+
+        const { attributes, innerText: name } = titleEl
+        const { lang } = attributes
+        channels.push({ id, name, lang, programmes: [] })
+ 
+        info(`found channel: ${name}`)
+        continue
+      }
+
+      if (node.rawTagName === 'programme') {
+        // 最后一个肯定是当前频道
+        const currentChannel = channels[channels.length - 1]
+        const { name, programmes } = currentChannel || {}
+
+        const { attributes, childNodes } = node
+        const { channel, start, stop } = attributes
+        if (name !== channel) {
+          continue
+        }
+
+        const titleEl = childNodes.find((node) => node.rawTagName === 'title')
+        if (!titleEl) {
+          continue
+        }
+
+        const { attributes: titleAttrs, innerText: title } = titleEl
+        const { lang } = titleAttrs
+        programmes.push({ title, lang, start, stop })
+        continue
+      }
     }
 
-    // const [, tv] = root.childNodes as [any, TVNode]
-
-    // const playlist = this.playlistMapping?.flatMap((item) => {
-    //   return item.channels.map((channel) => channel.name)
-    // })
-
-    // for (const node of tv.childNodes) {
-    //   if (node.rawTagName === 'channel') {
-    //     const { id, childNodes } = node
-    //     if (!playlist?.some((name) => id == name)) {
-    //       continue
-    //     }
-
-    //     const titleEl = childNodes.find((node) => node.rawTagName === 'display-name')
-    //     if (!titleEl) {
-    //       continue
-    //     }
-
-    //     const { attributes, innerText: name } = titleEl
-    //     const { lang } = attributes
-    //     channels.push({ id, name, lang, programmes: [] })
-    //     continue
-    //   }
-
-    //   if (node.rawTagName === 'programme') {
-    //     const { attributes, childNodes } = node
-    //     const { channel: name, start, stop } = attributes
-    //     const channel = channels.find((channel) => channel.name === name)
-    //     if (!channel) {
-    //       continue
-    //     }
-
-    //     const titleEl = childNodes.find((node) => node.rawTagName === 'title')
-    //     if (!titleEl) {
-    //       continue
-    //     }
-
-    //     const { attributes: titleAttrs, innerText: title } = titleEl
-    //     const { lang } = titleAttrs
-    //     channel.programmes.push({ title, lang, start, stop })
-    //     continue
-    //   }
-    // }
-
+    info(`load ${channels.length} channels`)
     this.concat(...channels)
   }
 
