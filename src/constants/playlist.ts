@@ -10,10 +10,6 @@ export const CHANNEL_MAPPING = [
         name: '翡翠台',
         logo: 'https://s2.loli.net/2024/12/22/gWrIwCqpHTAtuXZ.png',
       },
-      {
-        name: '明珠台',
-        logo: 'https://s2.loli.net/2024/12/22/5Yt9G8w4Q3oU1JL.png',
-      },
     ],
   },
   {
