@@ -7,7 +7,7 @@ export default function iptv(router: RouterType) {
   router.get('/epg.mock.xml', epg)
 
   router.get('/test', async () => {
-    const response = await fetch('view-source:https://epg.112114.xyz/pp.xml')
+    const response = await fetch('https://epg.112114.xyz/pp.xml')
     const content = await response.text()
     return new Response(content, {
       headers: {
