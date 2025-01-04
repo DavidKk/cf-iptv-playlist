@@ -35,24 +35,30 @@ export function fuzzyMatch(pattern: string, name: string) {
 export function mappingM3UToEPG(mapping: PlaylistMapping, m3uChannels: M3uChannel[]) {
   const mappingChannel = function* (group: string, mappingChannels: ChannelMapping[]) {
     for (const channel of m3uChannels) {
-      let right = 0
-      const target = mappingChannels.find(({ name }) => {
-        right = fuzzyMatch(name, channel.name!)
-        return !!right
-      })
+      let maxRight = 0
+      let maxChannel = null
+      for (const mappingItem of mappingChannels) {
+        const right = fuzzyMatch(mappingItem.name, channel.name!)
+        if (right <= maxRight) {
+          continue
+        }
 
-      if (!(target && right)) {
+        maxChannel = mappingItem
+        maxRight = right
+      }
+
+      if (!(maxRight > 0 && maxChannel)) {
         continue
       }
 
       const tvChannel = {
         ...channel,
         groupTitle: group,
-        tvgLogo: target.logo || channel.tvgLogo,
-        tvgLanguage: target.language || channel.tvgLanguage,
+        tvgLogo: maxChannel.logo || channel.tvgLogo,
+        tvgLanguage: maxChannel.language || channel.tvgLanguage,
       } satisfies M3uChannel
 
-      yield { ...tvChannel, right }
+      yield { ...tvChannel }
     }
   }
 
@@ -63,9 +69,9 @@ export function mappingM3UToEPG(mapping: PlaylistMapping, m3uChannels: M3uChanne
         continue
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const [{ right, ...channel }] = channels.sort((a, b) => a.right - b.right)
-      yield { ...channel, groupTitle: group }
+      for (const channel of channels) {
+        yield { ...channel, groupTitle: group }
+      }
     }
   }
 
