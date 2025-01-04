@@ -2,7 +2,7 @@ import { USER_AGENT } from '@/constants/playlist'
 import type { PlaylistMapping } from '@/type'
 // import { fuzzyMatch } from '@/utils/m3u'
 import type { Node } from 'node-html-parser'
-// import { parse } from 'node-html-parser'
+import { parse } from 'node-html-parser'
 
 export interface ChannelDisplayNode extends Node {
   rawTagName: 'display-name'
@@ -95,7 +95,13 @@ export class Epg {
 
     const content = await response.text()
     const channels: EPGChannel[] = []
-    // const root = parse(content)
+    try {
+      const root = parse(content)
+      console.log(typeof root)
+    } catch(error) {
+      console.log('wtf?')
+    }
+
     // const [, tv] = root.childNodes as [any, TVNode]
 
     // const playlist = this.playlistMapping?.flatMap((item) => {
