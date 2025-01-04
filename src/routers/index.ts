@@ -1,9 +1,8 @@
 import { Router } from 'itty-router'
 import { composeRouters } from '@/utils/composeRouters'
 import iptv from './iptv'
-import mock from './mock'
 
-const initRouter = composeRouters(iptv, mock)
+const initRouter = composeRouters(iptv)
 
 const router = Router()
 initRouter(router)
