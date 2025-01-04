@@ -1,6 +1,7 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "iptv-playlist"
 main = "src/index.ts"
+account_id = "7338bf873dafa467c13ba8dbb9683c35"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
 
