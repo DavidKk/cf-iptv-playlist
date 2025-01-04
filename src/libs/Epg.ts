@@ -118,7 +118,7 @@ export class Epg {
         const { attributes, innerText: name } = titleEl
         const { lang } = attributes
         channels.push({ id, name, lang, programmes: [] })
- 
+
         info(`found channel: ${name}`)
         continue
       }
