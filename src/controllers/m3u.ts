@@ -1,21 +1,29 @@
 import type { IContext } from '@/initializer'
-import { controller, TEXT } from '@/initializer'
+import { controller, NotFound, TEXT } from '@/initializer'
 import { Playlist } from '@/libs/Playlist'
 import { CHANNEL_MAPPING } from '@/constants/playlist'
+import { info, warn } from '@/services/logger'
 
 export default controller(async (ctx) => {
   const { req } = ctx
   const url = new URL(req.url)
   const baseUrl = url.protocol + '//' + url.hostname
 
-  const m3uUrls = getM3UUrls(ctx)
+  const urls = getM3UUrls(ctx)
+  if (!urls.length) {
+    warn(`no m3u urls defined in vars`)
+    return NotFound()
+  }
+
+  info(`m3u urls ${JSON.stringify(urls, null, 2)}`)
+
   const playlist = new Playlist({
     urlTvg: `${baseUrl}/epg.xml`,
     xTvgUrl: `${baseUrl}/epg.xml`,
     playlistMapping: CHANNEL_MAPPING,
   })
 
-  await playlist.loadUrls(...m3uUrls)
+  await playlist.loadUrls(...urls)
 
   const m3u = playlist.toM3U()
   return TEXT(m3u)
