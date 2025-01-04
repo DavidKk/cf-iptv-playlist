@@ -92,49 +92,49 @@ export class Epg {
     const content = await response.text()
     const channels: EPGChannel[] = []
     const root = parse(content)
-    const [, tv] = root.childNodes as [any, TVNode]
+    // const [, tv] = root.childNodes as [any, TVNode]
 
-    const playlist = this.playlistMapping?.flatMap((item) => {
-      return item.channels.map((channel) => channel.name)
-    })
+    // const playlist = this.playlistMapping?.flatMap((item) => {
+    //   return item.channels.map((channel) => channel.name)
+    // })
 
-    for (const node of tv.childNodes) {
-      if (node.rawTagName === 'channel') {
-        const { id, childNodes } = node
-        if (!playlist?.some((name) => id == name)) {
-          continue
-        }
+    // for (const node of tv.childNodes) {
+    //   if (node.rawTagName === 'channel') {
+    //     const { id, childNodes } = node
+    //     if (!playlist?.some((name) => id == name)) {
+    //       continue
+    //     }
 
-        const titleEl = childNodes.find((node) => node.rawTagName === 'display-name')
-        if (!titleEl) {
-          continue
-        }
+    //     const titleEl = childNodes.find((node) => node.rawTagName === 'display-name')
+    //     if (!titleEl) {
+    //       continue
+    //     }
 
-        const { attributes, innerText: name } = titleEl
-        const { lang } = attributes
-        channels.push({ id, name, lang, programmes: [] })
-        continue
-      }
+    //     const { attributes, innerText: name } = titleEl
+    //     const { lang } = attributes
+    //     channels.push({ id, name, lang, programmes: [] })
+    //     continue
+    //   }
 
-      if (node.rawTagName === 'programme') {
-        const { attributes, childNodes } = node
-        const { channel: name, start, stop } = attributes
-        const channel = channels.find((channel) => channel.name === name)
-        if (!channel) {
-          continue
-        }
+    //   if (node.rawTagName === 'programme') {
+    //     const { attributes, childNodes } = node
+    //     const { channel: name, start, stop } = attributes
+    //     const channel = channels.find((channel) => channel.name === name)
+    //     if (!channel) {
+    //       continue
+    //     }
 
-        const titleEl = childNodes.find((node) => node.rawTagName === 'title')
-        if (!titleEl) {
-          continue
-        }
+    //     const titleEl = childNodes.find((node) => node.rawTagName === 'title')
+    //     if (!titleEl) {
+    //       continue
+    //     }
 
-        const { attributes: titleAttrs, innerText: title } = titleEl
-        const { lang } = titleAttrs
-        channel.programmes.push({ title, lang, start, stop })
-        continue
-      }
-    }
+    //     const { attributes: titleAttrs, innerText: title } = titleEl
+    //     const { lang } = titleAttrs
+    //     channel.programmes.push({ title, lang, start, stop })
+    //     continue
+    //   }
+    // }
 
     this.concat(...channels)
   }

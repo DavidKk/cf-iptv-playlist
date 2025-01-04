@@ -36,6 +36,10 @@ export class Playlist {
 
     const headers = { userAgent: USER_AGENT } satisfies HeadersInit
     const response = await fetch(url, { headers })
+    if (!response.ok) {
+      throw new Error(`failed to load playlist`)
+    }
+
     const content = await response.text()
     info(`loaded playlist from "${url}"`)
 
