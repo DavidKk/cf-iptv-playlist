@@ -1,5 +1,6 @@
 import { USER_AGENT } from '@/constants/playlist'
 import type { PlaylistMapping } from '@/type'
+import { fuzzyMatch } from '@/utils/m3u'
 import type { Node } from 'node-html-parser'
 import { parse } from 'node-html-parser'
 
@@ -93,9 +94,17 @@ export class Epg {
     const root = parse(content)
     const [, tv] = root.childNodes as [any, TVNode]
 
+    const playlist = this.playlistMapping?.flatMap((item) => {
+      return item.channels.map((channel) => channel.name)
+    })
+
     for (const node of tv.childNodes) {
       if (node.rawTagName === 'channel') {
         const { id, childNodes } = node
+        if (!playlist?.some((name) => id == name)) {
+          continue
+        }
+
         const titleEl = childNodes.find((node) => node.rawTagName === 'display-name')
         if (!titleEl) {
           continue
