@@ -103,50 +103,52 @@ export class Epg {
       return item.channels.map((channel) => channel.name)
     })
 
-    for (const node of tv.childNodes) {
-      if (node.rawTagName === 'channel') {
-        const { id, childNodes } = node
-        if (!playlist?.some((name) => id == name)) {
-          continue
-        }
+    console.log(playlist.length)
+    console.log(tv.childNodes.length)
+    // for (const node of tv.childNodes) {
+    //   if (node.rawTagName === 'channel') {
+    //     const { id, childNodes } = node
+    //     if (!playlist?.some((name) => id == name)) {
+    //       continue
+    //     }
 
-        const titleEl = childNodes.find((node) => node.rawTagName === 'display-name')
-        if (!titleEl) {
-          continue
-        }
+    //     const titleEl = childNodes.find((node) => node.rawTagName === 'display-name')
+    //     if (!titleEl) {
+    //       continue
+    //     }
 
-        const { attributes, innerText: name } = titleEl
-        const { lang } = attributes
-        channels.push({ id, name, lang, programmes: [] })
+    //     const { attributes, innerText: name } = titleEl
+    //     const { lang } = attributes
+    //     channels.push({ id, name, lang, programmes: [] })
 
-        info(`found channel: ${name}`)
-        continue
-      }
+    //     info(`found channel: ${name}`)
+    //     continue
+    //   }
 
-      // if (node.rawTagName === 'programme') {
-      //   // 最后一个肯定是当前频道
-      //   const currentChannel = channels[channels.length - 1]
-      //   const { name, programmes } = currentChannel || {}
+    //   // if (node.rawTagName === 'programme') {
+    //   //   // 最后一个肯定是当前频道
+    //   //   const currentChannel = channels[channels.length - 1]
+    //   //   const { name, programmes } = currentChannel || {}
 
-      //   const { attributes, childNodes } = node
-      //   const { channel, start, stop } = attributes
-      //   if (name !== channel) {
-      //     continue
-      //   }
+    //   //   const { attributes, childNodes } = node
+    //   //   const { channel, start, stop } = attributes
+    //   //   if (name !== channel) {
+    //   //     continue
+    //   //   }
 
-      //   const titleEl = childNodes.find((node) => node.rawTagName === 'title')
-      //   if (!titleEl) {
-      //     continue
-      //   }
+    //   //   const titleEl = childNodes.find((node) => node.rawTagName === 'title')
+    //   //   if (!titleEl) {
+    //   //     continue
+    //   //   }
 
-      //   const { attributes: titleAttrs, innerText: title } = titleEl
-      //   const { lang } = titleAttrs
-      //   programmes.push({ title, lang, start, stop })
-      //   continue
-      // }
-    }
+    //   //   const { attributes: titleAttrs, innerText: title } = titleEl
+    //   //   const { lang } = titleAttrs
+    //   //   programmes.push({ title, lang, start, stop })
+    //   //   continue
+    //   // }
+    // }
 
-    info(`load ${channels.length} channels`)
+    // info(`load ${channels.length} channels`)
     this.concat(...channels)
   }
 
