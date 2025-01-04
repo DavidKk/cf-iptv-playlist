@@ -15,7 +15,12 @@ export default controller(async (ctx) => {
 
   info(`m3u urls ${JSON.stringify(urls, null, 2)}`)
 
+  const url = new URL(req.url)
+  const baseUrl = url.protocol + '//' + url.hostname
+
   const playlist = new Playlist({
+    urlTvg: `${baseUrl}/epg.xml`,
+    xTvgUrl: `${baseUrl}/epg.xml`,
     playlistMapping: CHANNEL_MAPPING,
   })
 
