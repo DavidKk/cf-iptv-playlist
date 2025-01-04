@@ -34,6 +34,10 @@ export class Playlist {
   public async load(url: string) {
     info(`loading playlist from "${url}"`)
 
+    if (!/https?:\/\//.test(url)) {
+      throw new Error(`invalid url "${url}"`)
+    }
+
     const headers = { userAgent: USER_AGENT } satisfies HeadersInit
     const response = await fetch(url, { headers })
     if (!response.ok) {
