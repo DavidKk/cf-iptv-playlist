@@ -5,18 +5,6 @@ account_id = "7338bf873dafa467c13ba8dbb9683c35"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
 
-[env.dev.vars]
-ENVIRONMENT = "development"
-EPG_URLS = [
-  "http://127.0.0.1:8787/epg.mock.xml"
-]
-M3U_URLS = [
-  "http://127.0.0.1:8787/iptv.mock.m3u"
-]
-
-[vars]
-ENVIRONMENT = "production"
-
 # Workers Logs
 # Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
 # Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
