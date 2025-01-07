@@ -18,10 +18,10 @@
   },
   "dependencies": {
     "@iptv/playlist": "^1.1.0",
+    "fast-xml-parser": "^4.5.1",
     "itty-router": "^4.2.2"
   },
   "devDependencies": {
-    "pretty-error": "^4.0.0",
     "@cloudflare/vitest-pool-workers": "^0.5.2",
     "@cloudflare/workers-types": "^4.20241230.0",
     "@commitlint/cli": "^19.4.0",
@@ -46,6 +46,7 @@
     "json5": "^2.2.3",
     "lint-staged": "^15.2.9",
     "prettier": "^3.3.3",
+    "pretty-error": "^4.0.0",
     "spinnies": "^0.5.1",
     "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",

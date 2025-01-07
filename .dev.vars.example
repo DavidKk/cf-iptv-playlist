@@ -1,4 +1,6 @@
 # 执行环境
 ENVIRONMENT="development"
 # 上游 m3u 地址，正式环境在 dashboard 上添加
-M3U_URLS=["http://aktv.top/live.m3u"]
+M3U_URLS=["http://192.168.3.43:34400/m3u/threadfin.m3u"]
+# 上游 epg 地址
+EPG_URL="http://192.168.3.43:34400/xmltv/threadfin.xml"
