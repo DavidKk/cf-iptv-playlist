@@ -15,6 +15,7 @@ export interface EPGTVChannel {
   icon?: EPGTVIcon
   live?: string
   active?: string
+  _originId?: string
 }
 
 export interface EPGTVProgramme {

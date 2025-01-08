@@ -1,71 +1,53 @@
-import { XMLParser, XMLBuilder } from 'fast-xml-parser'
+import { XMLBuilder } from 'fast-xml-parser'
 import { controller, NotFound, XML } from '@/initializer'
 import { CHANNEL_LIST } from '@/constants/playlist'
 import { info } from '@/services/logger'
+import { readEPGFromStream } from '@/services/epg'
 import { fuzzyMatch } from '@/utils/fuzzyMatch'
-import type { EPGTV } from '@/type'
 
 export default controller(async ({ env }) => {
-  if (!/https?:\/\//.test(env.EPG_URL)) {
+  const epgUrl = env.EPG_URL
+  if (!/https?:\/\//.test(epgUrl)) {
     return NotFound()
   }
 
-  const response = await fetch(env.EPG_URL)
-  const content = await response.text()
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: '$_',
-  })
+  info(`epg urls ${epgUrl}`)
 
-  const xmlDoc: { tv: EPGTV } = parser.parse(content)
-  const { channel: channels, programme: programmes } = xmlDoc.tv
-
-  info(`fetch ${channels.length} channels and ${programmes.length} programmes`)
-
-  const filteredChannels = Array.from(
-    (function* () {
-      for (const channel of channels) {
-        const channelName = channel['display-name']
-        for (const { id: tvgId, name: tvgName, logo } of CHANNEL_LIST) {
-          const familiar = fuzzyMatch(tvgName, channelName)
-          if (!familiar) {
-            continue
-          }
-
-          const $_id = `${tvgId}`.padStart(4, '0')
-          const icon = { $_src: logo }
-          const originId = channel.$_id
-          yield { ...channel, $_id, icon, originId, 'display-name': tvgName }
-        }
-      }
-    })()
-  )
-
-  const filteredProgrammes = Array.from(
-    (function* () {
-      for (const programme of programmes) {
-        const channelId = programme.$_channel
-        const channel = filteredChannels.find(({ originId }) => originId === channelId)
-        if (!channel) {
-          continue
-        }
-
-        const icon = channel.icon
-        yield { ...programme, icon }
-      }
-    })()
-  )
-
-  const result = {
-    ...xmlDoc,
-    tv: {
-      ...xmlDoc.tv,
-      channel: filteredChannels,
-      programme: filteredProgrammes,
-    },
+  const response = await fetch(epgUrl)
+  if (!response.ok) {
+    return NotFound()
   }
 
-  info(`the remaining ${filteredChannels} channels and ${programmes.length} programmes`)
+  const stream = response.body
+  if (!stream) {
+    return NotFound()
+  }
+
+  const { channels, programmes } = await readEPGFromStream(stream, {
+    filterChannels(channel) {
+      const index = CHANNEL_LIST.findIndex((item) => {
+        const name = channel['display-name']
+        return fuzzyMatch(item.name, name)
+      })
+
+      if (index === -1) {
+        return false
+      }
+
+      const targrt = CHANNEL_LIST[index]
+      channel['display-name'] = targrt.name
+      channel.icon = { $_src: targrt.logo }
+      channel._originId = channel.$_id
+      channel.$_id = `${targrt.id}`.padStart(4, '0')
+
+      return true
+    },
+    tranformChannelId(channel) {
+      return channel._originId || channel.$_id
+    },
+  })
+
+  info(`fetch ${channels.length} channels and ${programmes.length} programmes`)
 
   const builder = new XMLBuilder({
     ignoreAttributes: false,
@@ -73,6 +55,6 @@ export default controller(async ({ env }) => {
     attributeNamePrefix: '$_',
   })
 
-  const xmlData = builder.build(result)
-  return XML(xmlData)
+  const xml = builder.build({ channel: channels, programme: programmes })
+  return XML(`<?xml version="1.0" encoding="UTF-8"?><tv>${xml}</tv>`)
 })

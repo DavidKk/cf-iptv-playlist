@@ -1,4 +1,4 @@
-import { M3U_HEADERS, XML_HEADERS } from "@/constants/header"
+import { M3U_HEADERS, XML_HEADERS } from '@/constants/header'
 
 export const NotFound = (init?: ResponseInit) => {
   return new Response('Not Found', {

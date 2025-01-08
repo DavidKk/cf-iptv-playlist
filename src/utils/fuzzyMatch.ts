@@ -1,5 +1,12 @@
+import { warn } from "@/services/logger"
+
 /** 模糊匹配 channel 名称 */
 export function fuzzyMatch(pattern: string, name: string) {
+  if (!(typeof pattern === 'string' && typeof name === 'string')) {
+    warn(`fuzzyMatch: pattern or name is empty`)
+    return 0
+  }
+
   const p = pattern.toLowerCase()
   const n = name.toLowerCase()
 
