@@ -1,10 +1,11 @@
 import type { EPGTVChannel, EPGTVProgramme } from '@/type'
 import { XMLParser } from 'fast-xml-parser'
+import { info } from './logger'
 
 const CHANNEL_OPEN_TAG = '<channel'
 const CHANNEL_CLOSE_TAG = '</channel>'
-const PROGRAMME_OPEN_TAG = '<programme'
-const PROGRAMME_CLOSE_TAG = '</programme>'
+// const PROGRAMME_OPEN_TAG = '<programme'
+// const PROGRAMME_CLOSE_TAG = '</programme>'
 
 export interface ReadEPGFromStreamOptions {
   /** Filter channels to include in the result */
@@ -19,16 +20,16 @@ export interface ReadEPGFromStreamOptions {
  * @param options - Options to customize parsing behavior.
  */
 export async function readEPGFromStream(stream: ReadableStream<Uint8Array>, options?: ReadEPGFromStreamOptions) {
-  const { filterChannels, tranformChannelId } = options || {}
+  // const { filterChannels } = options || {}
   const reader = stream.getReader()
 
   const channels: EPGTVChannel[] = []
   const programmes: EPGTVProgramme[] = []
 
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: '$_',
-  })
+  // const parser = new XMLParser({
+  //   ignoreAttributes: false,
+  //   attributeNamePrefix: '$_',
+  // })
 
   /** Buffer to hold the unprocessed fragment */
   let xmlBuffer = ''
@@ -58,73 +59,88 @@ export async function readEPGFromStream(stream: ReadableStream<Uint8Array>, opti
 
     // Extract the complete <channel>...</channel> block
     const completeChannelBlock = xmlBuffer.slice(firstChannelOpenIndex, lastChannelCloseIndex + CHANNEL_CLOSE_TAG.length)
-
-    // Extract <channel> elements from the block
-    const channelXML = extractTags(completeChannelBlock, CHANNEL_OPEN_TAG, CHANNEL_CLOSE_TAG, {
-      handleMatch(remainder) {
-        // Remove processed channel block from the xmlBuffer
-        xmlBuffer = xmlBuffer.replaceAll(remainder, '')
-      },
-    })
-
-    const parsedChannelData: { channel: EPGTVChannel | EPGTVChannel[] } = parser.parse(channelXML)
-    let channelGroup = parsedChannelData?.channel || []
-    if (!Array.isArray(channelGroup)) {
-      channelGroup = [channelGroup]
-    }
-
-    if (typeof filterChannels === 'function') {
-      const filtered = channelGroup.filter((channel) => filterChannels(channel))
-      channels.push(...filtered)
-    } else {
-      channels.push(...channelGroup)
-    }
-  }
-
-  // Process programmes for the extracted channels
-  let remainingProgrammes = xmlBuffer
-  const channelIds = typeof tranformChannelId === 'function' ? channels.map(tranformChannelId) : channels.map((channel) => channel.$_id)
-  for (const channelId of channelIds) {
-    let programmeContent = ''
-    while (true) {
-      const channelToken = `channel="${channelId}"`
-      const openProgrammeIndex = remainingProgrammes.indexOf(channelToken)
-      if (openProgrammeIndex === -1) {
-        break
-      }
-
-      const beforeTokenContent = remainingProgrammes.slice(0, openProgrammeIndex)
-      const openIndex = beforeTokenContent.lastIndexOf(PROGRAMME_OPEN_TAG)
-      if (openIndex === -1) {
-        break
-      }
-
-      const afterTokenContent = remainingProgrammes.slice(openProgrammeIndex)
-      const closeProgrammeIndex = afterTokenContent.indexOf(PROGRAMME_CLOSE_TAG)
-      if (closeProgrammeIndex === -1) {
-        break
-      }
-
-      const programmeBlock = remainingProgrammes.slice(openIndex, openProgrammeIndex + closeProgrammeIndex + PROGRAMME_CLOSE_TAG.length)
-      programmeContent += programmeBlock
-
-      remainingProgrammes = remainingProgrammes.replace(programmeBlock, '')
-    }
-
-    const parsedProgrammeData: { programme: EPGTVProgramme | EPGTVProgramme[] } = parser.parse(programmeContent)
-    let programmeGroup = parsedProgrammeData?.programme || []
-    if (!programmeGroup) {
+    if (!completeChannelBlock) {
       continue
     }
 
-    if (!Array.isArray(programmeGroup)) {
-      programmeGroup = [programmeGroup]
+    info('start extract tags')
+
+    // Extract <channel> elements from the block
+    const channelXML = extractTags(completeChannelBlock, CHANNEL_OPEN_TAG, CHANNEL_CLOSE_TAG, {
+      // handleMatch(remainder) {
+      //   // Remove processed channel block from the xmlBuffer
+      //   xmlBuffer = xmlBuffer.replaceAll(remainder, '')
+      // },
+    })
+
+    if (!channelXML) {
+      continue
     }
 
-    programmes.push(...programmeGroup)
+    info('extract xml tags done')
+    xmlBuffer = xmlBuffer.slice(lastChannelCloseIndex + CHANNEL_CLOSE_TAG.length)
+
+    // const parsedChannelData: { channel: EPGTVChannel | EPGTVChannel[] } = parser.parse(channelXML)
+    // let channelGroup = parsedChannelData?.channel || []
+    // if (!Array.isArray(channelGroup)) {
+    //   channelGroup = [channelGroup]
+    // }
+
+    // info(`parsed ${channelGroup} channels`)
+
+    // if (typeof filterChannels === 'function') {
+    //   const filtered = channelGroup.filter((channel) => filterChannels(channel))
+    //   channels.push(...filtered)
+    // } else {
+    //   channels.push(...channelGroup)
+    // }
   }
 
-  return { channels, programmes }
+  // // Process programmes for the extracted channels
+  // let remainingProgrammes = xmlBuffer
+  // const channelIds = typeof tranformChannelId === 'function' ? channels.map(tranformChannelId) : channels.map((channel) => channel.$_id)
+  // for (const channelId of channelIds) {
+  //   let programmeContent = ''
+  //   while (true) {
+  //     const channelToken = `channel="${channelId}"`
+  //     const openProgrammeIndex = remainingProgrammes.indexOf(channelToken)
+  //     if (openProgrammeIndex === -1) {
+  //       break
+  //     }
+
+  //     const beforeTokenContent = remainingProgrammes.slice(0, openProgrammeIndex)
+  //     const openIndex = beforeTokenContent.lastIndexOf(PROGRAMME_OPEN_TAG)
+  //     if (openIndex === -1) {
+  //       break
+  //     }
+
+  //     const afterTokenContent = remainingProgrammes.slice(openProgrammeIndex)
+  //     const closeProgrammeIndex = afterTokenContent.indexOf(PROGRAMME_CLOSE_TAG)
+  //     if (closeProgrammeIndex === -1) {
+  //       break
+  //     }
+
+  //     const programmeBlock = remainingProgrammes.slice(openIndex, openProgrammeIndex + closeProgrammeIndex + PROGRAMME_CLOSE_TAG.length)
+  //     programmeContent += programmeBlock
+
+  //     remainingProgrammes = remainingProgrammes.replace(programmeBlock, '')
+  //   }
+
+  //   const parsedProgrammeData: { programme: EPGTVProgramme | EPGTVProgramme[] } = parser.parse(programmeContent)
+  //   let programmeGroup = parsedProgrammeData?.programme || []
+  //   if (!programmeGroup) {
+  //     continue
+  //   }
+
+  //   if (!Array.isArray(programmeGroup)) {
+  //     programmeGroup = [programmeGroup]
+  //   }
+
+  //   programmes.push(...programmeGroup)
+  // }
+
+  info(`find ${channels.length} channels and ${programmes.length} programmes`)
+  return { channels, programmes, xmlBuffer }
 }
 
 interface ExtractTagsOptions {

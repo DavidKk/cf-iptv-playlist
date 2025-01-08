@@ -1,4 +1,4 @@
-import { warn } from "@/services/logger"
+import { warn } from '@/services/logger'
 
 /** 模糊匹配 channel 名称 */
 export function fuzzyMatch(pattern: string, name: string) {

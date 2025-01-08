@@ -11,7 +11,7 @@ export const NotFound = (init?: ResponseInit) => {
   })
 }
 
-export const XML = (content: string, init?: ResponseInit) => {
+export const XML = (content: string | ReadableStream, init?: ResponseInit) => {
   return new Response(content, {
     ...init,
     status: 200,
@@ -22,7 +22,7 @@ export const XML = (content: string, init?: ResponseInit) => {
   })
 }
 
-export const M3U = (content: string, init?: ResponseInit) => {
+export const M3U = (content: string | ReadableStream, init?: ResponseInit) => {
   return new Response(content, {
     ...init,
     status: 200,
