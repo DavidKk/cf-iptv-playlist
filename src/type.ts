@@ -44,3 +44,16 @@ export interface EPGTVIcon {
   $_height?: string
   $_width?: string
 }
+
+export function getChannelName(channel: EPGTVChannel) {
+  const displayName = channel['display-name']
+  if (typeof displayName === 'object') {
+    return displayName['#text']
+  }
+
+  if (typeof displayName === 'string') {
+    return displayName
+  }
+
+  return Object.prototype.toString.call(displayName)
+}
