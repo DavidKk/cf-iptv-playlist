@@ -11,11 +11,16 @@ export interface EPGTV {
 
 export interface EPGTVChannel {
   $_id: string
-  'display-name': string
+  'display-name': EPGTVChannelDisplayName | string
   icon?: EPGTVIcon
   live?: string
   active?: string
   _originId?: string
+}
+
+export interface EPGTVChannelDisplayName {
+  $_lang?: string
+  '#text': string
 }
 
 export interface EPGTVProgramme {

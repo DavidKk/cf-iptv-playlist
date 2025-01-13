@@ -21,7 +21,19 @@ export default controller(async ({ env }) => {
   const responseStream = pipeEPGStream(stream, {
     filterChannels(channel) {
       const index = CHANNEL_LIST.findIndex((item) => {
-        const name = channel['display-name']
+        const displayName = channel['display-name']
+        const name = (() => {
+          if (typeof displayName === 'object') {
+            return displayName['#text']
+          }
+          
+          if (typeof displayName === 'string') {
+            return displayName
+          }
+
+          return Object.toString.call(displayName)
+        })()
+
         return fuzzyMatch(item.name, name)
       })
 
