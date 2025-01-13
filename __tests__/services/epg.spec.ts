@@ -1,4 +1,4 @@
-import { readEPGFromStream } from '@/services/epg'
+import { pipeEPGStream } from '@/services/epg'
 
 const EPG_CONTENT = `<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Threadfin" source-info-name="Threadfin - 1.2.23">
@@ -52,62 +52,94 @@ const EPG_CONTENT = `<?xml version="1.0" encoding="UTF-8"?>
 </tv>
 `
 
-describe('readEPGFromStream', () => {
+describe('pipeEPGStream', () => {
   describe('normal test', () => {
-    it('should parse EPG stream correctly', async () => {
+    it('should process EPG stream correctly and extract channels and programmes', async () => {
       const stream = stringToChunkedReadableStream(EPG_CONTENT, 4096)
-      const { channels } = await readEPGFromStream(stream)
-      expect(channels.length).toBe(2)
-      expect(channels[0].$_id).toBe('1030')
-      expect(channels[1].$_id).toBe('1000')
+      const reader = pipeEPGStream(stream)
+      const readerOutput = []
 
-      // expect(programmes.length).toBe(5)
-      // expect(programmes.filter((p) => p.$_channel === '1000').length).toBe(2)
-      // expect(programmes.filter((p) => p.$_channel === '1030').length).toBe(3)
+      const readerStream = reader.getReader()
+      while (true) {
+        const { value, done } = await readerStream.read()
+        if (done) break
+        readerOutput.push(new TextDecoder().decode(value))
+      }
+
+      const xmlContent = readerOutput.join('')
+      expect(xmlContent).toContain('<channel id="1030">')
+      expect(xmlContent).toContain('<channel id="1000">')
+      expect(xmlContent).toContain('<programme channel="1030" start="20250107003000 +0800" stop="20250107013000 +0800">')
+      expect(xmlContent).toContain('<programme channel="1000" start="20250107000000 +0800" stop="20250107010000 +0800">')
     })
 
-    it('should parse EPG stream with multiple channels and programmes correctly', async () => {
-      const xml = '<tv><channel id="1030"></channel></tv>'
-      const stream = stringToChunkedReadableStream(xml)
-      const { channels } = await readEPGFromStream(stream)
-      expect(channels.length).toBe(1)
-      expect(channels[0].$_id).toBe('1030')
-    })
-
-    it('should filter out inactive channels', async () => {
-      const xml = '<tv><channel id="1030"><active>false</active></channel></tv>'
-      const stream = stringToChunkedReadableStream(xml)
-      const { channels } = await readEPGFromStream(stream, {
-        filterChannels: (channel) => channel.active === 'true',
+    it('should filter channels based on user-defined conditions', async () => {
+      const stream = stringToChunkedReadableStream(EPG_CONTENT)
+      const reader = pipeEPGStream(stream, {
+        filterChannels: (channel) => channel.$_id === '1000',
       })
 
-      expect(channels.length).toBe(0)
+      const readerOutput = []
+      const readerStream = reader.getReader()
+      while (true) {
+        const { value, done } = await readerStream.read()
+        if (done) break
+        readerOutput.push(new TextDecoder().decode(value))
+      }
+
+      const xmlContent = readerOutput.join('')
+      expect(xmlContent).not.toContain('<channel id="1030">')
+      expect(xmlContent).toContain('<channel id="1000">')
     })
   })
 
   describe('boundary test', () => {
-    it('should handle empty EPG stream', async () => {
-      const stream = stringToChunkedReadableStream('')
-      const { channels } = await readEPGFromStream(stream)
-      expect(channels.length).toBe(0)
+    it('should handle empty stream gracefully', async () => {
+      const stream = stringToChunkedReadableStream('', 4096)
+      const reader = pipeEPGStream(stream)
+      const readerOutput = []
+
+      const readerStream = reader.getReader()
+      while (true) {
+        const { value, done } = await readerStream.read()
+        if (done) break
+        readerOutput.push(new TextDecoder().decode(value))
+      }
+
+      const xmlContent = readerOutput.join('')
+      expect(xmlContent).toBe('<?xml version="1.0" encoding="UTF-8"?><tv></tv>')
     })
 
-    it('should handle invalid EPG stream', async () => {
-      const stream = stringToChunkedReadableStream('invalid xml')
-      const { channels } = await readEPGFromStream(stream)
-      expect(channels.length).toBe(0)
+    it('should handle stream with invalid XML', async () => {
+      const stream = stringToChunkedReadableStream('invalid XML', 4096)
+      const reader = pipeEPGStream(stream)
+      const readerOutput = []
+
+      const readerStream = reader.getReader()
+      while (true) {
+        const { value, done } = await readerStream.read()
+        if (done) break
+        readerOutput.push(new TextDecoder().decode(value))
+      }
+
+      const xmlContent = readerOutput.join('')
+      expect(xmlContent).toBe('<?xml version="1.0" encoding="UTF-8"?><tv></tv>')
     })
 
-    it('should handle EPG stream with missing elements', async () => {
-      const stream = stringToChunkedReadableStream('<tv></tv>')
-      const { channels } = await readEPGFromStream(stream)
-      expect(channels.length).toBe(0)
-    })
+    it('should handle stream with missing channel elements', async () => {
+      const stream = stringToChunkedReadableStream('<tv><programme></programme></tv>', 4096)
+      const reader = pipeEPGStream(stream)
+      const readerOutput = []
 
-    it('should handle EPG stream with missing channel elements', async () => {
-      const stream = stringToChunkedReadableStream('<tv><programme></programme></tv>')
-      const { channels } = await readEPGFromStream(stream)
-      expect(channels.length).toBe(0)
+      const readerStream = reader.getReader()
+      while (true) {
+        const { value, done } = await readerStream.read()
+        if (done) break
+        readerOutput.push(new TextDecoder().decode(value))
+      }
+
+      const xmlContent = readerOutput.join('')
+      expect(xmlContent).not.toContain('<channel>')
     })
   })
 })

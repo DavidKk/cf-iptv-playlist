@@ -3,7 +3,7 @@ export const REQUEST_HEADERS = {
 }
 
 export const M3U_HEADERS = {
-  'Content-Type': 'application/text;charset=UTF-8',
+  'Content-Type': 'text/plain; charset=UTF-8',
   'Access-Control-Allow-Origin': '*',
 }
 
