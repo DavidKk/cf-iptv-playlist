@@ -1,5 +1,6 @@
 import type { EPGTVChannel, EPGTVProgramme } from '@/type'
 import { XMLBuilder, XMLParser } from 'fast-xml-parser'
+import { fail, warn } from '@/services/logger'
 
 // Constants for XML structure
 const XML_OPEN_TAG = '<?xml version="1.0" encoding="UTF-8"?><tv>'
@@ -27,7 +28,7 @@ const Builder = new XMLBuilder({
 })
 
 /** Options for configuring the EPG stream processing */
-export interface PipeEPGStreamOptions {
+export interface PipeEPGStreamOptions extends ProcessEPGStreamOptions {
   /** Function to filter channels */
   filterChannels?: (channel: EPGTVChannel) => boolean
   /** Function to transform channel IDs */
@@ -36,7 +37,7 @@ export interface PipeEPGStreamOptions {
 
 // Processes an EPG XML stream, filtering and transforming channels/programmes
 export function pipeEPGStream(stream: ReadableStream, options?: PipeEPGStreamOptions) {
-  const { filterChannels, tranformOriginChannelId } = options || {}
+  const { filterChannels, tranformOriginChannelId, onClose, signal } = options || {}
 
   /** Buffer to store incoming XML chunks */
   let xmlBuffer = ''
@@ -45,87 +46,93 @@ export function pipeEPGStream(stream: ReadableStream, options?: PipeEPGStreamOpt
   const channelIds = new Map<string, string>()
 
   /** Function to process XML stream chunks */
-  const { start, pull } = transformEPGStream(stream, (chunk, push: (content: string) => void) => {
-    // Accumulate chunks and remove line breaks
-    xmlBuffer += chunk.replaceAll('\n', '')
+  const { start, pull } = processEpgStream(
+    stream,
+    (chunk, push: (content: string) => void) => {
+      // Accumulate chunks and remove line breaks
+      xmlBuffer += chunk.replaceAll('\n', '')
 
-    // Extract <channel> elements and process them
-    const channels = extractChannels(xmlBuffer)
-    if (channels && channels.length) {
-      const filteredChannels: EPGTVChannel[] = []
-      for (const channel of channels) {
-        if (filterChannels && !filterChannels(channel)) {
-          // Skip filtered channels
-          continue
+      // Extract <channel> elements and process them
+      const channels = extractChannels(xmlBuffer)
+      if (channels && channels.length) {
+        const filteredChannels: EPGTVChannel[] = []
+        for (const channel of channels) {
+          if (filterChannels && !filterChannels(channel)) {
+            // Skip filtered channels
+            continue
+          }
+
+          const channelId = channel.$_id
+          const originId = tranformOriginChannelId ? tranformOriginChannelId(channel) : channelId
+          if (channelIds.has(originId)) {
+            // Avoid duplicate IDs
+            continue
+          }
+
+          filteredChannels.push({ ...channel, _originId: undefined })
+          // Map original to transformed ID
+          originId && channelIds.set(originId, channelId)
         }
 
-        const channelId = channel.$_id
-        const originId = tranformOriginChannelId ? tranformOriginChannelId(channel) : channelId
-        if (channelIds.has(originId)) {
-          // Avoid duplicate IDs
-          continue
+        if (filteredChannels.length > 0) {
+          const channelXML: string = Builder.build({ channel: filteredChannels })
+          push(channelXML)
+        }
+      }
+
+      // Extract and process <programme> elements
+      const programmes = extractProgrammes(xmlBuffer)
+      if (programmes && programmes.length) {
+        const originIds = Array.from(channelIds.entries())
+
+        const filteredProgrammes: EPGTVProgramme[] = []
+        for (const programme of programmes) {
+          const originId = programme.$_channel
+          if (!originId) {
+            continue
+          }
+
+          const target = originIds.find(([id]) => id === originId)
+          if (!target) {
+            continue
+          }
+
+          const [, channelId] = target
+          // Replace channel ID with transformed ID
+          programme.$_channel = channelId
+          filteredProgrammes.push(programme)
         }
 
-        filteredChannels.push({ ...channel, _originId: undefined })
-        // Map original to transformed ID
-        originId && channelIds.set(originId, channelId)
-      }
-
-      if (filteredChannels.length > 0) {
-        const channelXML: string = Builder.build({ channel: filteredChannels })
-        push(channelXML)
-      }
-    }
-
-    // Extract and process <programme> elements
-    const programmes = extractProgrammes(xmlBuffer)
-    if (programmes && programmes.length) {
-      const originIds = Array.from(channelIds.entries())
-
-      const filteredProgrammes: EPGTVProgramme[] = []
-      for (const programme of programmes) {
-        const originId = programme.$_channel
-        if (!originId) {
-          continue
+        if (filteredProgrammes.length > 0) {
+          const programmeXML: string = Builder.build({ programme: filteredProgrammes })
+          push(programmeXML)
         }
-
-        const target = originIds.find(([id]) => id === originId)
-        if (!target) {
-          continue
-        }
-
-        const [, channelId] = target
-        // Replace channel ID with transformed ID
-        programme.$_channel = channelId
-        filteredProgrammes.push(programme)
       }
 
-      if (filteredProgrammes.length > 0) {
-        const programmeXML: string = Builder.build({ programme: filteredProgrammes })
-        push(programmeXML)
+      // Remove end of </channel> and </programme> tags from buffer
+      const lastRelevantIndex = Math.max(xmlBuffer.lastIndexOf(CHANNEL_CLOSE_TAG), xmlBuffer.lastIndexOf(PROGRAMME_CLOSE_TAG))
+      if (lastRelevantIndex !== -1) {
+        const length = Math.max(CHANNEL_CLOSE_TAG.length, PROGRAMME_CLOSE_TAG.length)
+        xmlBuffer = xmlBuffer.slice(lastRelevantIndex + length)
       }
-    }
-
-    // Remove end of </channel> and </programme> tags from buffer
-    const lastRelevantIndex = Math.max(xmlBuffer.lastIndexOf(CHANNEL_CLOSE_TAG), xmlBuffer.lastIndexOf(PROGRAMME_CLOSE_TAG))
-    if (lastRelevantIndex !== -1) {
-      const length = Math.max(CHANNEL_CLOSE_TAG.length, PROGRAMME_CLOSE_TAG.length)
-      xmlBuffer = xmlBuffer.slice(lastRelevantIndex + length)
-    }
-  })
+    },
+    { onClose, signal }
+  )
 
   return new ReadableStream({ start, pull })
 }
 
 // Options for stream transformation
-interface TransformEPGStreamOptions {
+interface ProcessEPGStreamOptions {
   /** Callback for when the stream is closed */
   onClose?: () => void
+  /** Abort signal to cancel the stream processing */
+  signal?: AbortSignal
 }
 
 // Transforms an EPG XML stream, calling `handle` for each chunk
-function transformEPGStream(stream: ReadableStream, handle: (part: string, push: (content: string) => void) => void, options?: TransformEPGStreamOptions) {
-  const { onClose } = options || {}
+function processEpgStream(stream: ReadableStream, handle: (part: string, push: (content: string) => void) => void, options?: ProcessEPGStreamOptions) {
+  const { onClose, signal } = options || {}
 
   const reader = stream.getReader()
 
@@ -137,6 +144,11 @@ function transformEPGStream(stream: ReadableStream, handle: (part: string, push:
   const pull = async (controller: ReadableStreamDefaultController<Uint8Array>) => {
     try {
       while (true) {
+        if (signal?.aborted) {
+          warn('Stream processing aborted.')
+          break
+        }
+
         const { done, value } = await reader.read()
         if (done) {
           break
@@ -151,6 +163,13 @@ function transformEPGStream(stream: ReadableStream, handle: (part: string, push:
           const buffer = new TextEncoder().encode(content)
           controller.enqueue(buffer)
         })
+      }
+    } catch (error) {
+      if (signal?.aborted) {
+        warn('Stream reading stopped due to client disconnect.')
+      } else {
+        const reason = error instanceof Error ? error?.message : Object.prototype.toString.call(error)
+        fail(`Error processing stream ${reason}`)
       }
     } finally {
       reader.releaseLock()

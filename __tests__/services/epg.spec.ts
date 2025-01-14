@@ -1,4 +1,4 @@
-import { pipeEPGStream } from '@/services/epg'
+import { pipeEPGStream } from '@/services/epg/process'
 
 const EPG_CONTENT = `<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="Threadfin" source-info-name="Threadfin - 1.2.23">

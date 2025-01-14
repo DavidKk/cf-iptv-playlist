@@ -11,3 +11,12 @@ export const XML_HEADERS = {
   'Content-Type': 'text/xml; charset=utf-8;',
   'Access-Control-Allow-Origin': '*',
 }
+
+export const TEXT_HEADERS = {
+  'Content-Type': 'text/plain; charset=UTF-8',
+  'Access-Control-Allow-Origin': '*',
+}
+
+export const HIT_CACHE_HEADERS = {
+  'X-Cache-Hit': 'true',
+}

@@ -1,9 +1,7 @@
+import { HIT_CACHE_HEADERS } from '@/constants/header'
 import { controller, NotFound, XML } from '@/initializer'
-import { CHANNEL_LIST } from '@/constants/playlist'
-import { info } from '@/services/logger'
-import { pipeEPGStream } from '@/services/epg'
-import { fuzzyMatch } from '@/utils/fuzzyMatch'
-import { getChannelName } from '@/type'
+import { fetchAndProcessEPG } from '@/services/epg/fetch'
+import { fail } from '@/services/logger'
 
 export default controller(async ({ env }) => {
   const epgUrl = env.EPG_URL
@@ -11,36 +9,17 @@ export default controller(async ({ env }) => {
     return NotFound()
   }
 
-  info(`epg urls ${epgUrl}`)
+  try {
+    const { stream, isCache } = await fetchAndProcessEPG(epgUrl)
+    return XML(stream, {
+      headers: {
+        ...(isCache ? HIT_CACHE_HEADERS : {}),
+      },
+    })
+  } catch (error) {
+    const reason = error instanceof Error ? error?.message : Object.prototype.toString.call(error)
+    fail('fetchAndProcessEPG fail: ' + reason)
 
-  const epgResponse = await fetch(epgUrl)
-  const stream = epgResponse.body
-  if (!stream) {
     return NotFound()
   }
-
-  const responseStream = pipeEPGStream(stream, {
-    filterChannels(channel) {
-      const name = getChannelName(channel)
-      const index = CHANNEL_LIST.findIndex((item) => {
-        return fuzzyMatch(item.name, name)
-      })
-
-      if (index === -1) {
-        return false
-      }
-
-      const targrt = CHANNEL_LIST[index]
-      channel.icon = { $_src: targrt.logo }
-      channel._originId = channel.$_id
-      channel.$_id = `${targrt.id}`.padStart(4, '0')
-
-      return true
-    },
-    tranformOriginChannelId(channel) {
-      return channel._originId || channel.$_id
-    },
-  })
-
-  return XML(responseStream)
 })
