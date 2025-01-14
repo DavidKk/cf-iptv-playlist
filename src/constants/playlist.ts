@@ -54,10 +54,12 @@ export const CHANNEL_LIST = [
   { id: 51, name: '西藏卫视', logo: 'https://live.fanmingming.com/tv/西藏卫视.png' },
   { id: 52, name: '农林卫视', logo: 'https://live.fanmingming.com/tv/农林卫视.png' },
   { id: 53, name: '厦门卫视', logo: 'https://live.fanmingming.com/tv/厦门卫视.png' },
+  { id: 54, name: '黃金翡翠台', logo: 'https://s2.loli.net/2025/01/15/Glqak9ruYIKmRPd.png' },
+  { id: 55, name: '明珠台', logo: 'https://s2.loli.net/2024/12/22/3RFSj2eCrnQlkOa.png' },
 ] satisfies Channels[]
 
 export const CHANNEL_GROUP: Record<string, string[]> = {
-  香港电视: ['翡翠台'],
+  香港电视: ['翡翠台', '黃金翡翠台', '明珠台'],
   广东频道: ['大湾区卫视', '广东卫视', '广东珠江', '广东体育'],
   中央电视: [
     'CCTV-1',

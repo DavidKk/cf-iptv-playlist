@@ -26,7 +26,7 @@ export default controller(async (ctx) => {
           continue
         }
 
-        for (const { id, name: tvgName } of CHANNEL_LIST) {
+        for (const { id, name: tvgName, logo: tvgLogo } of CHANNEL_LIST) {
           const familiar = fuzzyMatch(tvgName, channelName)
           if (!familiar) {
             continue
@@ -40,7 +40,7 @@ export default controller(async (ctx) => {
           const tvgId = `${id}`.padStart(4, '0')
           for (const groupTitle of groups) {
             const tvChannel = { ...channel, groupTitle, tvgId, tvgName } satisfies M3uChannel
-            yield { ...tvChannel, familiar }
+            yield { ...tvChannel, tvgLogo, familiar }
           }
         }
       }
@@ -54,7 +54,7 @@ export default controller(async (ctx) => {
       for (const channel of filteredChannels) {
         const key = `${channel.tvgId}-${channel.groupTitle}`
         const target = map.get(key)
-        if (!target || target.familiar < channel.familiar) {
+        if (!target || target.familiar > channel.familiar) {
           map.set(key, channel)
         }
       }
