@@ -1,12 +1,12 @@
 import type { M3uChannel } from '@iptv/playlist'
-import { controller, NotFound, M3U } from '@/initializer'
+import { controller, NotFound, M3U, Text } from '@/initializer'
 import { CHANNEL_LIST, CHANNEL_GROUP } from '@/constants/playlist'
 import { info, warn } from '@/services/logger'
 import { getM3UUrls, loadM3UFiles, stringifyM3U } from '@/services/m3u'
 import { fuzzyMatch } from '@/utils/fuzzyMatch'
 
 export default controller(async (ctx) => {
-  const { req } = ctx
+  const { req, env } = ctx
 
   const urls = getM3UUrls(ctx)
   if (!urls.length) {
@@ -69,6 +69,10 @@ export default controller(async (ctx) => {
     urlTvg: `${baseUrl}/epg.xml`,
     xTvgUrl: `${baseUrl}/epg.xml`,
   })
+
+  if (env.ENVIRONMENT === 'development') {
+    return Text(response)
+  }
 
   return M3U(response)
 })
