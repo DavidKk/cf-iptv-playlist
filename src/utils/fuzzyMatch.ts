@@ -23,7 +23,7 @@ export function fuzzyMatch(pattern: string, name: string) {
   }
 
   const normalize = (text: string) => {
-    const content = text.toLowerCase().replace(/[\s_-]+/g, '(?:\s*?)')
+    const content = text.toLowerCase().replace(/[\s_\-]+/g, '(?:\\s*?)')
     return new RegExp(`^${content}`, 'im')
   }
 

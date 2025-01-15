@@ -1,7 +1,6 @@
 import type { IContext } from '@/initializer'
 import { parseM3U, writeM3U, type M3uChannel, type M3uHeaders } from '@iptv/playlist'
 import { info, warn } from '@/services/logger'
-import { REQUEST_HEADERS } from '@/constants/header'
 
 export function getM3UUrls({ env }: IContext): string[] {
   if (typeof env.M3U_URLS === 'string') {
@@ -41,10 +40,7 @@ export async function loadM3UFile(url: string) {
     throw new Error(`invalid url "${url}"`)
   }
 
-  const response = await fetch(url, {
-    headers: REQUEST_HEADERS,
-  })
-
+  const response = await fetch(url)
   if (!response.ok) {
     throw new Error(`failed to load playlist`)
   }
